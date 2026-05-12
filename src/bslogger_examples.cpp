@@ -1,12 +1,10 @@
+#include <chrono>  //milliseconds
+#include <thread>  //sleep_for
+
 #include "BSlogger.hpp"
 
-#include <chrono> //milliseconds
-#include <thread> //sleep_for
-
-//NOLINTNEXTLINE
-int main(int argc, char ** argv)
-{
-
+// NOLINTNEXTLINE
+int main(int argc, char** argv) {
   // Initiate logger (default name is 'log')
   LOG_INIT_CERR();
 
@@ -28,13 +26,11 @@ int main(int argc, char ** argv)
   // for ostreams can be logged
   float x = 3.1415;
 
-  log(LOG_DEBUG) << "The value of x is " << x
-                 << ", the address is " << &x
+  log(LOG_DEBUG) << "The value of x is " << x << ", the address is " << &x
                  << '\n';
 
   progbar_fancy<uint64_t> p(std::cout, 99999999);
-  for (uint64_t i = 0; i < 99999999; i+=4)
-  {
+  for (uint64_t i = 0; i < 99999999; i += 4) {
     p += 2;
     p++;
     ++p;
@@ -42,8 +38,7 @@ int main(int argc, char ** argv)
   p.finalize();
 
   progbar_simple<uint64_t> p2(std::cout, 99999999);
-  for (uint64_t i = 0; i < 99999999; i+=4)
-  {
+  for (uint64_t i = 0; i < 99999999; i += 4) {
     p2 += 2;
     p2++;
     ++p2;
