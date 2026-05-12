@@ -376,7 +376,8 @@ class progbar_fancy {
       }
       _fac << "| " << (_sum / _max) * 100 << "% | " << dss << " " << prefix
            << _unit << "/s | " << format_duration<uint64_t>(diff_start.count())
-           << " | " << format_duration<uint64_t>(eta.count()) << std::flush;
+           << " | " << format_duration<uint64_t>(eta.count()) << "\e[K"
+           << std::flush;
       if (_sum >= _max) {
         finalize();
       }
