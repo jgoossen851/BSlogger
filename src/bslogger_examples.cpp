@@ -34,18 +34,17 @@ int main(int argc, char** argv) {
                  << '\n';
 
   progbar_fancy<uint64_t> p(std::cout, 99999999);
-  for (uint64_t i = 0; i < 99999999; i += 4) {
-    p += 2;
-    p++;
-    ++p;
+  for (uint64_t i = 0; i < 99999999; i++) {
+    ++p;  // Also supports incrementing p via p++, p += 2, etc.
+    if (i % 10000000 == 0) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
   }
   p.finalize();
 
   progbar_simple<uint64_t> p2(std::cout, 99999999);
-  for (uint64_t i = 0; i < 99999999; i += 4) {
-    p2 += 2;
-    p2++;
-    ++p2;
+  for (uint64_t i = 0; i < 99999999; i++) {
+    ++p2;  // Also supports incrementing p2 via p2++, p2 += 2, etc.
     if (i % 10000000 == 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
