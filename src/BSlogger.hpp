@@ -87,7 +87,7 @@ class logger {
   inline logger(std::ostream&, unsigned, std::string);
   inline logger(std::ostream&, std::string n);
   template <typename T>
-  friend logger& operator<<(logger& l, const T& s);
+  friend std::ostream& operator<<(logger& l, const T& s);
   inline logger& operator()(unsigned ll);
   inline void add_snapshot(std::string n, bool quiet = true) {
     time_t now;
@@ -128,13 +128,9 @@ inline std::string prep_name(logger& l);
 // unsigned logger::_loglevel = LOG_DEFAULT;
 
 template <typename T>
-logger& operator<<(logger& l, const T& s) {
-  if (l._message_level <= l._loglevel()) {
-    l._fac << s;
-    return l;
-  } else {
-    return l;
-  }
+std::ostream& operator<<(logger& l, const T& s) {
+  if (l._message_level <= l._loglevel()) l._fac << s;
+  return l._fac;
 }
 
 logger::logger(std::ostream& f, std::string n)

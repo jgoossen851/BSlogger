@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
   float x = 3.1415;
 
   log(LOG_DEBUG) << "The value of x is " << x << ", the address is " << &x
-                 << '\n';
+                 << std::endl;
 
   log.add_snapshot("Fancy Progbar");
   progbar_fancy<uint64_t> p(std::cout, 99999999);
