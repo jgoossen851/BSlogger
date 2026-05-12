@@ -14,7 +14,8 @@ int main(int argc, char** argv) {
 
   // Log some stuff. The initial loglevel is
   // INFO and lower (INFO, WARNING, ERROR)
-  // so the debug info is not displayed
+  // so the debug and trace info is not displayed
+  log(LOG_TRACE) << "Some text\n";
   log(LOG_DEBUG) << "Some text\n";
   log(LOG_INFO) << "Some text\n";
   log(LOG_WARN) << "Some text\n";
@@ -23,7 +24,7 @@ int main(int argc, char** argv) {
   // Change the log level
   log.set_log_level(LOG_DEBUG);
 
-  // Now the debug info is displayed
+  // Now the debug info is displayed, but trace is still suppressed
   log(LOG_DEBUG) << "Some text\n";
 
   // Everything that has a operator<< method

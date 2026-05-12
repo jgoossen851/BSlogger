@@ -19,7 +19,8 @@
 #define LOG_INFO 3
 #define LOG_TIME 4
 #define LOG_DEBUG 5
-#define LOG_DEFAULT 4
+#define LOG_TRACE 6
+#define LOG_DEFAULT LOG_TIME
 
 #define LOG_INIT_COUT() logger log(std::cout, __PRETTY_FUNCTION__)
 #define LOG_INIT_CERR() logger log(std::cerr, __PRETTY_FUNCTION__)
@@ -28,19 +29,21 @@
 
 #ifdef BSLOG_NO_COLORS
 
-#define BSLOG_TIME "[ TIME    ]"
-#define BSLOG_DEBUG "[ DEBUG   ]"
 #define BSLOG_ERROR "[ ERROR   ]"
 #define BSLOG_WARNING "[ WARNING ]"
 #define BSLOG_INFO "[ INFO    ]"
+#define BSLOG_TIME "[ TIME    ]"
+#define BSLOG_DEBUG "[ DEBUG   ]"
+#define BSLOG_TRACE "[ TRACE   ]"
 
 #else
 
-#define BSLOG_TIME "\033[0;35m[ TIME    ]\033[0;0m"
-#define BSLOG_DEBUG "[ DEBUG   ]"
 #define BSLOG_ERROR "\033[0;31m[ ERROR   ]\033[0;0m"
 #define BSLOG_WARNING "\033[0;33m[ WARNING ]\033[0;0m"
 #define BSLOG_INFO "\033[0;34m[ INFO    ]\033[0;0m"
+#define BSLOG_TIME "\033[0;35m[ TIME    ]\033[0;0m"
+#define BSLOG_DEBUG "[ DEBUG   ]"
+#define BSLOG_TRACE "\033[2m[ TRACE   ]\033[0;0m"
 
 #endif
 
@@ -166,11 +169,14 @@ std::string prep_level(logger& l) {
     case LOG_INFO:
       return BSLOG_INFO;
       break;
+    case LOG_TIME:
+      return BSLOG_TIME;
+      break;
     case LOG_DEBUG:
       return BSLOG_DEBUG;
       break;
-    case LOG_TIME:
-      return BSLOG_TIME;
+    case LOG_TRACE:
+      return BSLOG_TRACE;
       break;
     default:
       return "";
