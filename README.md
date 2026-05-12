@@ -78,8 +78,8 @@ Output:
 
 The macros `LOG_INIT_COUT()`, `LOG_INIT_CERR()` and `LOG_INIT_CLOG()` are shorthands for `logger log(std::cout, __PRETTY_FUNCTION__)`, `logger log(std::cerr, __PRETTY_FUNCTION__)` and `logger log(std::clog, __PRETTY_FUNCTION__)`. Any `std::ostream` can be passed to the `logger()` constructor. The two constructors are:
 
-  * `logger(std::ostream&, std::string)` - contructs a BSlogger logging to `ostream` and presenting the supplied string as the namespace.
-  * `logger(std::ostream&, unsigned, std::string)` - construcs a BSlogger using a non default log-level, otherwise same as above.
+  * `logger(std::ostream&, std::string)` - constructs a BSlogger logging to `ostream` and presenting the supplied string as the namespace.
+  * `logger(std::ostream&, unsigned, std::string)` - constructs a BSlogger using a non default log-level, otherwise same as above.
 
 The log levels are:
 
