@@ -365,7 +365,7 @@ class progbar_fancy {
         prefix = "M";
         dss /= 1e6;
       } else if (dss > 1e3) {
-        prefix = "K";
+        prefix = "k";
         dss /= 1e3;
       }
       _before = now;
