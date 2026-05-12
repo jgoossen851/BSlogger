@@ -267,34 +267,37 @@ class progbar_simple {
         _fac(f),
         _width(width),
         _final(false) {
-    _incr = _max / static_cast<double>(_width);
     _fac << "0%";
-    for (uint64_t i = 0; i < _width - 1; i++) {
+    for (uint64_t i = 0; i < _width - 6; i++) {  // 6 = sizeof("0%100%")
       _fac << '-';
     }
     _fac << "100%" << std::endl;
+    _width -= 2;  // 2 = sizeof("[]")
+    _incr = _max / static_cast<double>(_width);
     _fac << "[";
     _state = _incr;
     _fac.flush();
   };
   void check() {
-    if (_sum >= _state) {
+    if (_sum >= _state && !_final) {
       _state += _incr;
       _width--;
       _fac << "=";
       _fac.flush();
-      if (_width == 0 && !_final) {
-        _fac << "]\n";
-        _fac.flush();
-        _final = true;
+      if (_width == 0) {
+        finalize();
       }
     }
   }
   void finalize() {
     if (!_final) {
-      _final = true;
+      for (uint64_t i = 0; i < _width; i++) {
+        _fac << '.';
+      }
+      _width = 0;
       _fac << "]\n";
       _fac.flush();
+      _final = true;
     }
   }
   void operator()(const T& x) {
@@ -333,22 +336,16 @@ template <typename T>
 class progbar_fancy {
  public:
   progbar_fancy(std::ostream& f, T max, uint64_t poll_interval = 1000,
-                uint64_t width = 30, std::string unit = "")
+                uint64_t width = 80, std::string unit = "")
       : _max(static_cast<double>(max)),
         _sum(0),
-        _state(0),
-        _incr(0),
         _fac(f),
         _width(width),
         _unit(unit),
         _final(false) {
-    _incr = _max / static_cast<double>(_width);
     _start = std::chrono::system_clock::now();
     _before = _start;
-    _state = _incr;
     _poll_interval = std::chrono::milliseconds(poll_interval);
-    _fac << std::setprecision(2) << std::fixed;
-    _fac.flush();
   };
   void check() {
     std::chrono::system_clock::time_point now =
@@ -383,15 +380,22 @@ class progbar_fancy {
         dss /= 1e3;
       }
       _before = now;
+
+      double percentDone = _sum / _max;
+      std::ostringstream oss;
+      oss << std::setprecision(2) << std::fixed;
+      oss << "| " << percentDone * 100 << "% | " << dss << " " << prefix
+          << _unit << "/s | " << format_duration<uint64_t>(diff_start.count())
+          << " | " << format_duration<uint64_t>(eta.count());
+
       _fac << "\r" << std::flush;
       _fac << "|";
-      for (double i = 0; i < _max; i += _incr) {
-        _fac << (i < _sum ? "=" : " ");
+      int barWidth = _width - oss.str().size() - 1;  // 1 = sizeof("|")
+      for (double i = 0; i < barWidth; ++i) {
+        _fac << (i < percentDone * barWidth ? "=" : " ");
       }
-      _fac << "| " << (_sum / _max) * 100 << "% | " << dss << " " << prefix
-           << _unit << "/s | " << format_duration<uint64_t>(diff_start.count())
-           << " | " << format_duration<uint64_t>(eta.count()) << "\e[K"
-           << std::flush;
+      _fac << oss.str() << "\e[K" << std::flush;
+
       if (_sum >= _max) {
         finalize();
       }
@@ -429,8 +433,6 @@ class progbar_fancy {
  private:
   double _max;
   double _sum;
-  double _state;
-  double _incr;
   std::ostream& _fac;
   uint64_t _width;
   std::chrono::milliseconds _poll_interval;
