@@ -34,23 +34,23 @@ int main(int argc, char** argv) {
   log(LOG_DEBUG) << "The value of x is " << x << ", the address is " << &x
                  << '\n';
 
+  log.add_snapshot("Fancy Progbar");
   progbar_fancy<uint64_t> p(std::cout, 99999999);
   for (uint64_t i = 0; i < 99999999; i++) {
     ++p;  // Also supports incrementing p via p++, p += 2, etc.
-    if (i % 10000000 == 0) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
   }
   p.finalize();
+  log(LOG_INFO) << "Iterating the Fancy Progbar 100M times took "
+                << log.time_since_snap("Fancy Progbar", true) << " seconds.\n";
 
+  log.add_snapshot("Simple Progbar");
   progbar_simple<uint64_t> p2(std::cout, 99999999);
   for (uint64_t i = 0; i < 99999999; i++) {
     ++p2;  // Also supports incrementing p2 via p2++, p2 += 2, etc.
-    if (i % 10000000 == 0) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
   }
   p2.finalize();
+  log(LOG_INFO) << "Iterating the Simple Progbar 100M times took "
+                << log.time_since_snap("Simple Progbar", true) << " seconds.\n";
 
   // You can add time snapshots
   log.add_snapshot("before_sleep");
