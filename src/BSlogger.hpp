@@ -63,7 +63,6 @@ class logger {
   inline time_t time_since_snap(std::string, bool quiet = false);
   inline void flush() { _fac.flush(); }
   friend std::string prep_level(logger& l);
-  friend std::string prep_time(logger& l);
   friend std::string prep_name(logger& l);
   static unsigned& _loglevel();
   inline void set_log_level(unsigned ll) { _loglevel() = ll; }
@@ -79,7 +78,7 @@ class logger {
 };
 
 inline std::string prep_level(logger& l);
-inline std::string prep_time(logger& l);
+inline std::string prep_time();
 inline std::string prep_name(logger& l);
 
 template <typename T>
@@ -186,7 +185,7 @@ logger::logger(std::ostream& f, unsigned ll, std::string n)
 logger& logger::operator()(unsigned ll) {
   _message_level = ll;
   if (_message_level <= _loglevel()) {
-    _fac << prep_level(*this) << prep_time(*this) << prep_name(*this) << ": ";
+    _fac << prep_level(*this) << prep_time() << prep_name(*this) << ": ";
   }
   return *this;
 }
@@ -217,10 +216,11 @@ std::string prep_level(logger& l) {
   return "";
 }
 
-std::string prep_time(logger& l) {
-  time(&l._now);
+std::string prep_time() {
+  time_t now;
+  time(&now);
   struct tm* t;
-  t = localtime(&l._now);
+  t = localtime(&now);
   std::string s, m, h, D, M, Y;
   s = std::to_string(t->tm_sec);
   m = std::to_string(t->tm_min);
@@ -254,8 +254,8 @@ void logger::add_snapshot(std::string n, bool quiet) {
   _snaps.push_back(now);
   _snap_ns.push_back(n);
   if (_loglevel() >= LOG_TIME && !quiet)
-    _fac << BSLOG_TIME << prep_time(*this) << prep_name(*this)
-         << ": Added snap '" << n << "'\n";
+    _fac << BSLOG_TIME << prep_time() << prep_name(*this) << ": Added snap '"
+         << n << "'\n";
 }
 
 time_t logger::time_since_start(bool quiet) {
@@ -264,7 +264,7 @@ time_t logger::time_since_start(bool quiet) {
     time_t duration = difftime(_now, _start);
     if (!quiet) {
       _message_level = LOG_TIME;
-      _fac << prep_level(*this) << prep_time(*this) << prep_name(*this) << ": "
+      _fac << prep_level(*this) << prep_time() << prep_name(*this) << ": "
            << duration << "s since instantiation\n";
     }
     return duration;
@@ -278,7 +278,7 @@ time_t logger::time_since_last_snap(bool quiet) {
     time_t duration = difftime(_now, _snaps.back());
     if (!quiet) {
       _message_level = LOG_TIME;
-      _fac << prep_level(*this) << prep_time(*this) << prep_name(*this) << ": "
+      _fac << prep_level(*this) << prep_time() << prep_name(*this) << ": "
            << duration << "s since snap '" << _snap_ns.back() << "'\n";
     }
     return duration;
@@ -292,7 +292,7 @@ time_t logger::time_since_snap(std::string s, bool quiet) {
     auto it = find(_snap_ns.begin(), _snap_ns.end(), s);
     if (it == _snap_ns.end()) {
       _message_level = LOG_WARN;
-      _fac << prep_level(*this) << prep_time(*this) << prep_name(*this) << ": "
+      _fac << prep_level(*this) << prep_time() << prep_name(*this) << ": "
            << "Could not find snapshot " << s << '\n';
       return time_t(0);
     }
@@ -300,7 +300,7 @@ time_t logger::time_since_snap(std::string s, bool quiet) {
     time_t duration = difftime(_now, _snaps[dist]);
     if (!quiet) {
       _message_level = LOG_TIME;
-      _fac << prep_level(*this) << prep_time(*this) << prep_name(*this) << ": "
+      _fac << prep_level(*this) << prep_time() << prep_name(*this) << ": "
            << duration << "s since snap '" << _snap_ns[dist] << "'\n";
     }
     return duration;
