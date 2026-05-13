@@ -266,7 +266,9 @@ std::string prep_time() {
   return ret;
 }
 
-std::string prep_name(logger& l) { return " " + l._name + " "; }
+std::string prep_name(logger& l) {
+  return l._name.size() == 0 ? "" : " " + l._name + " ";
+}
 
 unsigned& logger::_loglevel() {
   static unsigned _ll_internal = LOG_DEFAULT;
