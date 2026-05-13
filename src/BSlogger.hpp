@@ -29,21 +29,23 @@
 
 #ifdef BSLOG_NO_COLORS
 
-#define BSLOG_ERROR "[ ERROR   ]"
-#define BSLOG_WARNING "[ WARNING ]"
-#define BSLOG_INFO "[ INFO    ]"
-#define BSLOG_TIME "[ TIME    ]"
-#define BSLOG_DEBUG "[ DEBUG   ]"
-#define BSLOG_TRACE "[ TRACE   ]"
+#define BSLOG_ERROR "ERROR:"
+#define BSLOG_WARNING "WARN: "
+#define BSLOG_INFO "INFO: "
+#define BSLOG_TIME "TIME: "
+#define BSLOG_DEBUG "DEBUG:"
+#define BSLOG_TRACE "TRACE:"
+#define BSLOG_RESET ""
 
 #else
 
-#define BSLOG_ERROR "\033[0;31m[ ERROR   ]\033[0;0m"
-#define BSLOG_WARNING "\033[0;33m[ WARNING ]\033[0;0m"
-#define BSLOG_INFO "\033[0;36m[ INFO    ]\033[0;0m"
-#define BSLOG_TIME "\033[0;35m[ TIME    ]\033[0;0m"
-#define BSLOG_DEBUG "\033[38:5:208m[ DEBUG   ]\033[0;0m"
-#define BSLOG_TRACE "\033[2m[ TRACE   ]\033[0;0m"
+#define BSLOG_ERROR "\033[0;31mERROR:"
+#define BSLOG_WARNING "\033[0;33mWARN: "
+#define BSLOG_INFO "\033[0;36mINFO: "
+#define BSLOG_TIME "\033[0;35mTIME: "
+#define BSLOG_DEBUG "\033[38:5:208mDEBUG:"
+#define BSLOG_TRACE "\033[2mTRACE:"
+#define BSLOG_RESET "\033[0m"
 
 #endif
 
@@ -209,7 +211,8 @@ logger& logger::operator()(unsigned ll) {
 }
 
 std::ostream& logger::prefix() {
-  return _fac << prep_level(*this) << prep_time() << prep_name(*this) << ": ";
+  return _fac << prep_level(*this) << prep_time() << prep_name(*this)
+              << BSLOG_RESET;
 }
 
 std::string prep_level(logger& l) {
@@ -258,12 +261,12 @@ std::string prep_time() {
   if (t->tm_mon + 1 < 10) M = "0" + M;
 
   std::string ret =
-      "[ " + Y + "-" + M + "-" + D + "T" + h + ":" + m + ":" + s + " ]";
+      " " + Y + "-" + M + "-" + D + "T" + h + ":" + m + ":" + s + " ";
 
   return ret;
 }
 
-std::string prep_name(logger& l) { return "[ " + l._name + " ]"; }
+std::string prep_name(logger& l) { return " " + l._name + " "; }
 
 unsigned& logger::_loglevel() {
   static unsigned _ll_internal = LOG_DEFAULT;

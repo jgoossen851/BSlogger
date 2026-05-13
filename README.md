@@ -64,15 +64,15 @@ Basically all the features are shown in bslogger_examples.cpp
 Output:
 
 ```
-[ INFO    ][ 2017-02-08T20:04:47 ][ int main(int, char**) ]: Some text
-[ WARNING ][ 2017-02-08T20:04:47 ][ int main(int, char**) ]: Some text
-[ ERROR   ][ 2017-02-08T20:04:47 ][ int main(int, char**) ]: Some text
-[ DEBUG   ][ 2017-02-08T20:04:47 ][ int main(int, char**) ]: Some text
-[ DEBUG   ][ 2017-02-08T20:04:47 ][ int main(int, char**) ]: The value of x is 3.1415, the address is 0x7fff17d6f1d8
-[ TIME    ][ 2017-02-08T20:04:47 ][ int main(int, char**) ]: Added snap 'before_sleep'
-[ TIME    ][ 2017-02-08T20:04:49 ][ int main(int, char**) ]: 2s since snap 'before_sleep'
-[ TIME    ][ 2017-02-08T20:04:49 ][ int main(int, char**) ]: 2s since snap 'before_sleep'
-[ TIME    ][ 2017-02-08T20:04:49 ][ int main(int, char**) ]: 2s since instantiation
+INFO:  2017-02-08T20:04:47  int main(int, char**) Some text
+WARN:  2017-02-08T20:04:47  int main(int, char**) Some text
+ERROR: 2017-02-08T20:04:47  int main(int, char**) Some text
+DEBUG: 2017-02-08T20:04:47  int main(int, char**) Some text
+DEBUG: 2017-02-08T20:04:47  int main(int, char**) The value of x is 3.1415, the address is 0x7fff17d6f1d8
+TIME:  2017-02-08T20:04:47  int main(int, char**) Added snap 'before_sleep'
+TIME:  2017-02-08T20:04:49  int main(int, char**) 2s since snap 'before_sleep'
+TIME:  2017-02-08T20:04:49  int main(int, char**) 2s since snap 'before_sleep'
+TIME:  2017-02-08T20:04:49  int main(int, char**) 2s since instantiation
 ```
 
 ## Advanced usage
