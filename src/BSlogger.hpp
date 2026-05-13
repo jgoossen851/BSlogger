@@ -22,10 +22,10 @@
 #define LOG_TRACE 6
 #define LOG_DEFAULT LOG_TIME
 
-#define LOG_INIT_COUT() timer log(std::cout, __PRETTY_FUNCTION__)
-#define LOG_INIT_CERR() timer log(std::cerr, __PRETTY_FUNCTION__)
-#define LOG_INIT_CLOG() timer log(std::clog, __PRETTY_FUNCTION__)
-#define LOG_INIT_CUSTOM(X) timer log((X), __PRETTY_FUNCTION__)
+#define LOG_INIT_COUT(foo) timer foo(std::cout, __PRETTY_FUNCTION__)
+#define LOG_INIT_CERR(foo) timer foo(std::cerr, __PRETTY_FUNCTION__)
+#define LOG_INIT_CLOG(foo) timer foo(std::clog, __PRETTY_FUNCTION__)
+#define LOG_INIT_CUSTOM(foo, X) timer foo((X), __PRETTY_FUNCTION__)
 
 #ifdef BSLOG_NO_COLORS
 

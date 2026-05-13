@@ -5,8 +5,8 @@
 
 // NOLINTNEXTLINE
 int main(int argc, char** argv) {
-  // Initiate logger (default name is 'log')
-  LOG_INIT_CERR();
+  // Initiate logger
+  LOG_INIT_CERR(log);
 
   for (int i = 0; i < argc; i++) {
     log(LOG_INFO) << "Arg: " << i << " => " << argv[i] << '\n';

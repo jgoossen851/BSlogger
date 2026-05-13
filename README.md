@@ -22,7 +22,7 @@ BSlogger supports:
 Basically all the features are shown in bslogger_examples.cpp
 
 ```
-  LOG_INIT_CERR();
+  LOG_INIT_CERR(log);
 
   // Log some stuff. The initial loglevel is
   // INFO and lower (INFO, WARNING, ERROR)
@@ -77,7 +77,7 @@ TIME:  2017-02-08T20:04:49  int main(int, char**) 2s since instantiation
 
 ## Advanced usage
 
-The macros `LOG_INIT_COUT()`, `LOG_INIT_CERR()` and `LOG_INIT_CLOG()` are shorthands for `logger log(std::cout, __PRETTY_FUNCTION__)`, `logger log(std::cerr, __PRETTY_FUNCTION__)` and `logger log(std::clog, __PRETTY_FUNCTION__)`. Any `std::ostream` can be passed to the `logger()` constructor. The two constructors are:
+The macros `LOG_INIT_COUT(log)`, `LOG_INIT_CERR(log)` and `LOG_INIT_CLOG(log)` are shorthands for `logger log(std::cout, __PRETTY_FUNCTION__)`, `logger log(std::cerr, __PRETTY_FUNCTION__)` and `logger log(std::clog, __PRETTY_FUNCTION__)`. Any `std::ostream` can be passed to the `logger()` constructor. The two constructors are:
 
   * `logger(std::ostream&, std::string)` - constructs a BSlogger logging to `ostream` and presenting the supplied string as the namespace.
   * `logger(std::ostream&, unsigned, std::string)` - constructs a BSlogger using a non default log-level, otherwise same as above.
