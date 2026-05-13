@@ -48,6 +48,88 @@
 #endif
 
 template <typename T>
+std::string format_duration(T xms);
+
+class logger {
+ public:
+  inline logger(std::ostream&, unsigned, std::string);
+  inline logger(std::ostream&, std::string n);
+  template <typename T>
+  friend std::ostream& operator<<(logger& l, const T& s);
+  inline logger& operator()(unsigned ll);
+  inline void add_snapshot(std::string n, bool quiet = true);
+  inline time_t time_since_start(bool quiet = false);
+  inline time_t time_since_last_snap(bool quiet = false);
+  inline time_t time_since_snap(std::string, bool quiet = false);
+  inline void flush() { _fac.flush(); }
+  friend std::string prep_level(logger& l);
+  friend std::string prep_time(logger& l);
+  friend std::string prep_name(logger& l);
+  static unsigned& _loglevel();
+  inline void set_log_level(unsigned ll) { _loglevel() = ll; }
+
+ private:
+  time_t _now;
+  time_t _start;
+  std::vector<time_t> _snaps;
+  std::vector<std::string> _snap_ns;
+  unsigned _message_level;
+  std::ostream& _fac;
+  std::string _name;
+};
+
+inline std::string prep_level(logger& l);
+inline std::string prep_time(logger& l);
+inline std::string prep_name(logger& l);
+
+template <typename T>
+class progbar_simple {
+ public:
+  progbar_simple(std::ostream& f, T max, uint64_t width = 80);
+  void check();
+  void finalize();
+  void operator()(const T& x);
+  progbar_simple& operator++();
+  progbar_simple operator++(int);
+  progbar_simple& operator+=(const T& x);
+
+ private:
+  double _max;
+  double _sum;
+  double _state;
+  double _incr;
+  std::ostream& _fac;
+  uint64_t _width;
+  bool _final;
+};
+
+template <typename T>
+class progbar_fancy {
+ public:
+  progbar_fancy(std::ostream& f, T max, uint64_t poll_interval = 1000,
+                uint64_t width = 80, std::string unit = "");
+  void check();
+  void finalize();
+  void operator()(const T& x);
+  progbar_fancy& operator++();
+  progbar_fancy operator++(int);
+  progbar_fancy& operator+=(const T& x);
+
+ private:
+  double _max;
+  double _sum;
+  std::ostream& _fac;
+  uint64_t _width;
+  std::chrono::milliseconds _poll_interval;
+  std::chrono::system_clock::time_point _before;
+  std::chrono::system_clock::time_point _start;
+  std::string _unit;
+  bool _final;
+};
+
+//* Implementation
+
+template <typename T>
 std::string format_duration(T xms) {
   uint64_t seconds = static_cast<uint64_t>(xms);
   uint64_t days = 0;
@@ -81,51 +163,6 @@ std::string format_duration(T xms) {
   ss << std::setfill('0') << std::setw(2) << seconds;
   return ss.str();
 }
-
-class logger {
- public:
-  inline logger(std::ostream&, unsigned, std::string);
-  inline logger(std::ostream&, std::string n);
-  template <typename T>
-  friend std::ostream& operator<<(logger& l, const T& s);
-  inline logger& operator()(unsigned ll);
-  inline void add_snapshot(std::string n, bool quiet = true) {
-    time_t now;
-    time(&now);
-    _snaps.push_back(now);
-    _snap_ns.push_back(n);
-    if (_loglevel() >= LOG_TIME && !quiet)
-      _fac << BSLOG_TIME << prep_time(*this) << prep_name(*this)
-           << ": Added snap '" << n << "'\n";
-  }
-  inline time_t time_since_start(bool quiet = false);
-  inline time_t time_since_last_snap(bool quiet = false);
-  inline time_t time_since_snap(std::string, bool quiet = false);
-  inline void flush() { _fac.flush(); }
-  friend std::string prep_level(logger& l);
-  friend std::string prep_time(logger& l);
-  friend std::string prep_name(logger& l);
-  static unsigned& _loglevel() {
-    static unsigned _ll_internal = LOG_DEFAULT;
-    return _ll_internal;
-  };
-  inline void set_log_level(unsigned ll) { _loglevel() = ll; }
-
- private:
-  time_t _now;
-  time_t _start;
-  std::vector<time_t> _snaps;
-  std::vector<std::string> _snap_ns;
-  unsigned _message_level;
-  std::ostream& _fac;
-  std::string _name;
-};
-
-inline std::string prep_level(logger& l);
-inline std::string prep_time(logger& l);
-inline std::string prep_name(logger& l);
-
-// unsigned logger::_loglevel = LOG_DEFAULT;
 
 template <typename T>
 std::ostream& operator<<(logger& l, const T& s) {
@@ -206,6 +243,21 @@ std::string prep_time(logger& l) {
 
 std::string prep_name(logger& l) { return "[ " + l._name + " ]"; }
 
+unsigned& logger::_loglevel() {
+  static unsigned _ll_internal = LOG_DEFAULT;
+  return _ll_internal;
+}
+
+void logger::add_snapshot(std::string n, bool quiet) {
+  time_t now;
+  time(&now);
+  _snaps.push_back(now);
+  _snap_ns.push_back(n);
+  if (_loglevel() >= LOG_TIME && !quiet)
+    _fac << BSLOG_TIME << prep_time(*this) << prep_name(*this)
+         << ": Added snap '" << n << "'\n";
+}
+
 time_t logger::time_since_start(bool quiet) {
   if (_loglevel() >= LOG_TIME) {
     time(&_now);
@@ -257,187 +309,184 @@ time_t logger::time_since_snap(std::string s, bool quiet) {
 }
 
 template <typename T>
-class progbar_simple {
- public:
-  progbar_simple(std::ostream& f, T max, uint64_t width = 80)
-      : _max(static_cast<double>(max)),
-        _sum(0),
-        _state(0),
-        _incr(0),
-        _fac(f),
-        _width(width),
-        _final(false) {
-    _fac << "0%";
-    for (uint64_t i = 0; i < _width - 6; i++) {  // 6 = sizeof("0%100%")
-      _fac << '-';
-    }
-    _fac << "100%" << std::endl;
-    _width -= 2;  // 2 = sizeof("[]")
-    _incr = _max / static_cast<double>(_width);
-    _fac << "[";
-    _state = _incr;
-    _fac.flush();
-  };
-  void check() {
-    if (_sum >= _state && !_final) {
-      _state += _incr;
-      _width--;
-      _fac << "=";
-      _fac.flush();
-      if (_width == 0) {
-        finalize();
-      }
-    }
+progbar_simple<T>::progbar_simple(std::ostream& f, T max, uint64_t width)
+    : _max(static_cast<double>(max)),
+      _sum(0),
+      _state(0),
+      _incr(0),
+      _fac(f),
+      _width(width),
+      _final(false) {
+  _fac << "0%";
+  for (uint64_t i = 0; i < _width - 6; i++) {  // 6 = sizeof("0%100%")
+    _fac << '-';
   }
-  void finalize() {
-    if (!_final) {
-      for (uint64_t i = 0; i < _width; i++) {
-        _fac << '.';
-      }
-      _width = 0;
-      _fac << "]\n";
-      _fac.flush();
-      _final = true;
-    }
-  }
-  void operator()(const T& x) {
-    double dx = static_cast<double>(x);
-    _sum = dx;
-    check();
-  }
-  progbar_simple& operator++() {
-    _sum += 1;
-    check();
-    return *this;
-  }
-  progbar_simple operator++(int) {
-    progbar_simple copy(*this);
-    _sum += 1;
-    check();
-    return copy;
-  }
-  progbar_simple& operator+=(const T& x) {
-    _sum += static_cast<double>(x);
-    check();
-    return *this;
-  }
-
- private:
-  double _max;
-  double _sum;
-  double _state;
-  double _incr;
-  std::ostream& _fac;
-  uint64_t _width;
-  bool _final;
-};
+  _fac << "100%" << std::endl;
+  _width -= 2;  // 2 = sizeof("[]")
+  _incr = _max / static_cast<double>(_width);
+  _fac << "[";
+  _state = _incr;
+  _fac.flush();
+}
 
 template <typename T>
-class progbar_fancy {
- public:
-  progbar_fancy(std::ostream& f, T max, uint64_t poll_interval = 1000,
-                uint64_t width = 80, std::string unit = "")
-      : _max(static_cast<double>(max)),
-        _sum(0),
-        _fac(f),
-        _width(width),
-        _unit(unit),
-        _final(false) {
-    _start = std::chrono::system_clock::now();
-    _before = _start;
-    _poll_interval = std::chrono::milliseconds(poll_interval);
-  };
-  void check() {
-    std::chrono::system_clock::time_point now =
-        std::chrono::system_clock::now();
-    std::chrono::milliseconds diff =
-        std::chrono::duration_cast<std::chrono::milliseconds>(now - _before);
-    if (diff > _poll_interval) {
-      std::chrono::seconds diff_start =
-          std::chrono::duration_cast<std::chrono::seconds>(now - _start);
-      double ds = std::chrono::duration<double>(diff_start).count();
-      double dss = _sum / ds;
-
-      int64_t dss_i = std::ceil((_max - _sum) / dss);
-
-      auto eta = std::chrono::duration<uint64_t>(dss_i);
-
-      std::string prefix = "";
-      if (dss > 1e15) {
-        prefix = "P";
-        dss /= 1e15;
-      } else if (dss > 1e12) {
-        prefix = "T";
-        dss /= 1e12;
-      } else if (dss > 1e9) {
-        prefix = "G";
-        dss /= 1e9;
-      } else if (dss > 1e6) {
-        prefix = "M";
-        dss /= 1e6;
-      } else if (dss > 1e3) {
-        prefix = "k";
-        dss /= 1e3;
-      }
-      _before = now;
-
-      double percentDone = _sum / _max;
-      std::ostringstream oss;
-      oss << std::setprecision(2) << std::fixed;
-      oss << "| " << percentDone * 100 << "% | " << dss << " " << prefix
-          << _unit << "/s | " << format_duration<uint64_t>(diff_start.count())
-          << " | " << format_duration<uint64_t>(eta.count());
-
-      _fac << "\r" << std::flush;
-      _fac << "|";
-      int barWidth = _width - oss.str().size() - 1;  // 1 = sizeof("|")
-      for (double i = 0; i < barWidth; ++i) {
-        _fac << (i < percentDone * barWidth ? "=" : " ");
-      }
-      _fac << oss.str() << "\e[K" << std::flush;
-
-      if (_sum >= _max) {
-        finalize();
-      }
+void progbar_simple<T>::check() {
+  if (_sum >= _state && !_final) {
+    _state += _incr;
+    _width--;
+    _fac << "=";
+    _fac.flush();
+    if (_width == 0) {
+      finalize();
     }
   }
-  void finalize() {
-    if (!_final) {
-      _fac << std::endl;
-      _final = true;
-      _fac.flush();
+}
+
+template <typename T>
+void progbar_simple<T>::finalize() {
+  if (!_final) {
+    for (uint64_t i = 0; i < _width; i++) {
+      _fac << '.';
+    }
+    _width = 0;
+    _fac << "]\n";
+    _fac.flush();
+    _final = true;
+  }
+}
+
+template <typename T>
+void progbar_simple<T>::operator()(const T& x) {
+  double dx = static_cast<double>(x);
+  _sum = dx;
+  check();
+}
+
+template <typename T>
+progbar_simple<T>& progbar_simple<T>::operator++() {
+  _sum += 1;
+  check();
+  return *this;
+}
+
+template <typename T>
+progbar_simple<T> progbar_simple<T>::operator++(int) {
+  progbar_simple copy(*this);
+  _sum += 1;
+  check();
+  return copy;
+}
+
+template <typename T>
+progbar_simple<T>& progbar_simple<T>::operator+=(const T& x) {
+  _sum += static_cast<double>(x);
+  check();
+  return *this;
+}
+
+template <typename T>
+progbar_fancy<T>::progbar_fancy(std::ostream& f, T max, uint64_t poll_interval,
+                                uint64_t width, std::string unit)
+    : _max(static_cast<double>(max)),
+      _sum(0),
+      _fac(f),
+      _width(width),
+      _unit(unit),
+      _final(false) {
+  _start = std::chrono::system_clock::now();
+  _before = _start;
+  _poll_interval = std::chrono::milliseconds(poll_interval);
+}
+
+template <typename T>
+void progbar_fancy<T>::check() {
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+  std::chrono::milliseconds diff =
+      std::chrono::duration_cast<std::chrono::milliseconds>(now - _before);
+  if (diff > _poll_interval) {
+    std::chrono::seconds diff_start =
+        std::chrono::duration_cast<std::chrono::seconds>(now - _start);
+    double ds = std::chrono::duration<double>(diff_start).count();
+    double dss = _sum / ds;
+
+    int64_t dss_i = std::ceil((_max - _sum) / dss);
+
+    auto eta = std::chrono::duration<uint64_t>(dss_i);
+
+    std::string prefix = "";
+    if (dss > 1e15) {
+      prefix = "P";
+      dss /= 1e15;
+    } else if (dss > 1e12) {
+      prefix = "T";
+      dss /= 1e12;
+    } else if (dss > 1e9) {
+      prefix = "G";
+      dss /= 1e9;
+    } else if (dss > 1e6) {
+      prefix = "M";
+      dss /= 1e6;
+    } else if (dss > 1e3) {
+      prefix = "k";
+      dss /= 1e3;
+    }
+    _before = now;
+
+    double percentDone = _sum / _max;
+    std::ostringstream oss;
+    oss << std::setprecision(2) << std::fixed;
+    oss << "| " << percentDone * 100 << "% | " << dss << " " << prefix << _unit
+        << "/s | " << format_duration<uint64_t>(diff_start.count()) << " | "
+        << format_duration<uint64_t>(eta.count());
+
+    _fac << "\r" << std::flush;
+    _fac << "|";
+    int barWidth = _width - oss.str().size() - 1;  // 1 = sizeof("|")
+    for (double i = 0; i < barWidth; ++i) {
+      _fac << (i < percentDone * barWidth ? "=" : " ");
+    }
+    _fac << oss.str() << "\e[K" << std::flush;
+
+    if (_sum >= _max) {
+      finalize();
     }
   }
-  void operator()(const T& x) {
-    double dx = static_cast<double>(x);
-    _sum = dx;
-    check();
-  }
-  progbar_fancy& operator++() {
-    _sum += 1;
-    check();
-    return *this;
-  }
-  progbar_fancy operator++(int) {
-    progbar_fancy copy(*this);
-    _sum += 1;
-    check();
-    return copy;
-  }
-  progbar_fancy& operator+=(const T& x) {
-    _sum += static_cast<double>(x);
-    check();
-    return *this;
-  }
+}
 
- private:
-  double _max;
-  double _sum;
-  std::ostream& _fac;
-  uint64_t _width;
-  std::chrono::milliseconds _poll_interval;
-  std::chrono::system_clock::time_point _before;
-  std::chrono::system_clock::time_point _start;
-  std::string _unit;
-  bool _final;
-};
+template <typename T>
+void progbar_fancy<T>::finalize() {
+  if (!_final) {
+    _fac << std::endl;
+    _final = true;
+    _fac.flush();
+  }
+}
+
+template <typename T>
+void progbar_fancy<T>::operator()(const T& x) {
+  double dx = static_cast<double>(x);
+  _sum = dx;
+  check();
+}
+
+template <typename T>
+progbar_fancy<T>& progbar_fancy<T>::operator++() {
+  _sum += 1;
+  check();
+  return *this;
+}
+
+template <typename T>
+progbar_fancy<T> progbar_fancy<T>::operator++(int) {
+  progbar_fancy copy(*this);
+  _sum += 1;
+  check();
+  return copy;
+}
+
+template <typename T>
+progbar_fancy<T>& progbar_fancy<T>::operator+=(const T& x) {
+  _sum += static_cast<double>(x);
+  check();
+  return *this;
+}
