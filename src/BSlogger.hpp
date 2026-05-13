@@ -22,10 +22,10 @@
 #define LOG_TRACE 6
 #define LOG_DEFAULT LOG_TIME
 
-#define LOG_INIT_COUT() logger log(std::cout, __PRETTY_FUNCTION__)
-#define LOG_INIT_CERR() logger log(std::cerr, __PRETTY_FUNCTION__)
-#define LOG_INIT_CLOG() logger log(std::clog, __PRETTY_FUNCTION__)
-#define LOG_INIT_CUSTOM(X) logger log((X), __PRETTY_FUNCTION__)
+#define LOG_INIT_COUT() timer log(std::cout, __PRETTY_FUNCTION__)
+#define LOG_INIT_CERR() timer log(std::cerr, __PRETTY_FUNCTION__)
+#define LOG_INIT_CLOG() timer log(std::clog, __PRETTY_FUNCTION__)
+#define LOG_INIT_CUSTOM(X) timer log((X), __PRETTY_FUNCTION__)
 
 #ifdef BSLOG_NO_COLORS
 
@@ -50,6 +50,7 @@
 template <typename T>
 std::string format_duration(T xms);
 
+// A simple logger to output messages to ostream
 class logger {
  public:
   inline logger(std::ostream&, unsigned, std::string);
@@ -57,24 +58,35 @@ class logger {
   template <typename T>
   friend std::ostream& operator<<(logger& l, const T& s);
   inline logger& operator()(unsigned ll);
-  inline void add_snapshot(std::string n, bool quiet = true);
-  inline time_t time_since_start(bool quiet = false);
-  inline time_t time_since_last_snap(bool quiet = false);
-  inline time_t time_since_snap(std::string, bool quiet = false);
   inline void flush() { _fac.flush(); }
   friend std::string prep_level(logger& l);
   friend std::string prep_name(logger& l);
   static unsigned& _loglevel();
   inline void set_log_level(unsigned ll) { _loglevel() = ll; }
 
+ protected:
+  unsigned _message_level;
+  std::ostream& _fac;
+
+ private:
+  std::string _name;
+};
+
+// Adds timer capabilities to the logger class
+class timer : public logger {
+ public:
+  inline timer(std::ostream& os, unsigned l, std::string n);
+  inline timer(std::ostream& os, std::string n);
+  inline void add_snapshot(std::string n, bool quiet = true);
+  inline time_t time_since_start(bool quiet = false);
+  inline time_t time_since_last_snap(bool quiet = false);
+  inline time_t time_since_snap(std::string, bool quiet = false);
+
  private:
   time_t _now;
   time_t _start;
   std::vector<time_t> _snaps;
   std::vector<std::string> _snap_ns;
-  unsigned _message_level;
-  std::ostream& _fac;
-  std::string _name;
 };
 
 inline std::string prep_level(logger& l);
@@ -170,16 +182,21 @@ std::ostream& operator<<(logger& l, const T& s) {
 }
 
 logger::logger(std::ostream& f, std::string n)
-    : _message_level(LOG_SILENT), _fac(f), _name(n) {
+    : _message_level(LOG_SILENT), _fac(f), _name(n) {}
+
+timer::timer(std::ostream& f, std::string n) : logger(f, n) {
   time(&_now);
   time(&_start);
 }
 
 logger::logger(std::ostream& f, unsigned ll, std::string n)
     : _message_level(LOG_SILENT), _fac(f), _name(n) {
+  _loglevel() = ll;
+}
+
+timer::timer(std::ostream& f, unsigned ll, std::string n) : logger(f, ll, n) {
   time(&_now);
   time(&_start);
-  _loglevel() = ll;
 }
 
 logger& logger::operator()(unsigned ll) {
@@ -248,7 +265,7 @@ unsigned& logger::_loglevel() {
   return _ll_internal;
 }
 
-void logger::add_snapshot(std::string n, bool quiet) {
+void timer::add_snapshot(std::string n, bool quiet) {
   time_t now;
   time(&now);
   _snaps.push_back(now);
@@ -258,7 +275,7 @@ void logger::add_snapshot(std::string n, bool quiet) {
          << n << "'\n";
 }
 
-time_t logger::time_since_start(bool quiet) {
+time_t timer::time_since_start(bool quiet) {
   if (_loglevel() >= LOG_TIME) {
     time(&_now);
     time_t duration = difftime(_now, _start);
@@ -272,7 +289,7 @@ time_t logger::time_since_start(bool quiet) {
   return time_t(0);
 }
 
-time_t logger::time_since_last_snap(bool quiet) {
+time_t timer::time_since_last_snap(bool quiet) {
   if (_loglevel() >= LOG_TIME && _snap_ns.size() > 0) {
     time(&_now);
     time_t duration = difftime(_now, _snaps.back());
@@ -286,7 +303,7 @@ time_t logger::time_since_last_snap(bool quiet) {
   return time_t(0);
 }
 
-time_t logger::time_since_snap(std::string s, bool quiet) {
+time_t timer::time_since_snap(std::string s, bool quiet) {
   if (_loglevel() >= LOG_TIME) {
     time(&_now);
     auto it = find(_snap_ns.begin(), _snap_ns.end(), s);
